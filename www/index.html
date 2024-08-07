@@ -312,9 +312,7 @@
                 </div>
             </div>
             <div class="player-controls">
-                <button class="player-button" id="prevButton">⏮️</button>
                 <button class="player-button play-pause" id="playPauseButton">▶️</button>
-                <button class="player-button" id="nextButton">⏭️</button>
             </div>
         </div>
         <audio id="audioPlayer"></audio>
@@ -329,46 +327,42 @@
         </div>
 
         <script>
+            // Trending podcasts data from RSS feeds
             const podcastData = [
                 {
                     id: 1,
-                    title: "Tech Talk Today",
-                    author: "Sarah Johnson",
-                    description: "Daily discussions on the latest tech trends and innovations.",
-                    image: "https://picsum.photos/seed/tech1/400/400",
-                    audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                    title: "Home Cooking",
+                    author: "Samin Nosrat & Hrishikesh Hirway",
+                    description: "A cooking show hosted by Samin Nosrat and Hrishikesh Hirway.",
+                    feedUrl: "https://feed.homecooking.show/",
+                    episodes: [],
                 },
                 {
                     id: 2,
-                    title: "Mindful Moments",
-                    author: "Dr. Michael Chang",
-                    description: "Guided meditations and mindfulness practices for daily life.",
-                    image: "https://picsum.photos/seed/mindful2/400/400",
-                    audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+                    title: "The Ezra Klein Show",
+                    author: "New York Times Opinion",
+                    description:
+                        "Each Tuesday and Friday, Ezra Klein invites you into a conversation on something that matters.",
+                    feedUrl: "https://feeds.megaphone.fm/GLT9190936013",
+                    episodes: [],
                 },
                 {
                     id: 3,
-                    title: "True Crime Stories",
-                    author: "Emily Richards",
-                    description: "In-depth investigations of fascinating true crime cases.",
-                    image: "https://picsum.photos/seed/crime3/400/400",
-                    audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+                    title: "Marketplace Tech",
+                    author: "Marketplace",
+                    description:
+                        "Monday through Friday, Marketplace Tech demystifies the digital economy with stories that explore the impact of technology on our lives.",
+                    feedUrl: "https://feeds.megaphone.fm/COMG2534928641",
+                    episodes: [],
                 },
                 {
                     id: 4,
-                    title: "Global Gastronomy",
-                    author: "Chef Antonio Rossi",
-                    description: "Exploring culinary traditions from around the world.",
-                    image: "https://picsum.photos/seed/food4/400/400",
-                    audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
-                },
-                {
-                    id: 5,
-                    title: "Startup Success",
-                    author: "Alex Freeman",
-                    description: "Interviews with successful entrepreneurs and startup tips.",
-                    image: "https://picsum.photos/seed/startup5/400/400",
-                    audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
+                    title: "Think Fast, Talk Smart",
+                    author: "Stanford GSB",
+                    description:
+                        "A podcast produced by Stanford Graduate School of Business. Each episode provides concrete, easy-to-implement tools and techniques to help you hone and enhance your communication skills.",
+                    feedUrl: "https://rss.art19.com/think-fast-talk-smart",
+                    episodes: [],
                 },
             ];
 
@@ -380,39 +374,65 @@
 
             const audioPlayer = document.getElementById("audioPlayer");
 
+            async function fetchPodcastEpisodes(podcast) {
+                try {
+                    const response = await fetch(
+                        `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(podcast.feedUrl)}`
+                    );
+                    const data = await response.json();
+
+                    if (data.status === "ok") {
+                        podcast.image = data.feed.image; // Update the podcast image
+                        podcast.episodes = data.items.map((item) => ({
+                            title: item.title,
+                            pubDate: item.pubDate,
+                            audio: item.enclosure?.link || "",
+                        }));
+                    }
+                } catch (error) {
+                    console.error(`Error fetching episodes for ${podcast.title}:`, error);
+                }
+            }
+
+            async function initializePodcasts() {
+                for (const podcast of podcastData) {
+                    await fetchPodcastEpisodes(podcast);
+                }
+                renderPodcasts();
+            }
+
             function createPodcastItem(podcast) {
                 const isFavorite = favorites.includes(podcast.id);
                 let episodeListHTML = "";
-                if (podcast.episodes) {
+                if (podcast.episodes && podcast.episodes.length > 0) {
                     episodeListHTML = `
-                    <div class="episode-list">
-                        ${podcast.episodes
-                            .map(
-                                (episode) => `
-                            <div class="episode-item" data-audio="${episode.audio}">
-                                <div class="episode-title">${episode.title}</div>
-                                <div class="episode-date">${new Date(episode.pubDate).toLocaleDateString()}</div>
-                            </div>
-                        `
-                            )
-                            .join("")}
-                    </div>
-                `;
+        <div class="episode-list">
+            ${podcast.episodes
+                .slice(0, 5)
+                .map(
+                    (episode) => `
+                <div class="episode-item" data-audio="${episode.audio}">
+                    <div class="episode-title">${episode.title}</div>
+                    <div class="episode-date">${new Date(episode.pubDate).toLocaleDateString()}</div>
+                </div>
+            `
+                )
+                .join("")}
+        </div>
+    `;
                 }
                 return `
-                <div class="podcast-item" data-id="${podcast.id}">
-                    <img src="${podcast.image}" alt="${podcast.title}" class="podcast-image">
-                    <button class="favorite-btn" onclick="toggleFavorite(${podcast.id}, event)">${
-                    isFavorite ? "❤️" : "🤍"
-                }</button>
-                    <div class="podcast-content">
-                        <div class="podcast-title">${podcast.title}</div>
-                        <div class="podcast-author">${podcast.author}</div>
-                        <div class="podcast-description">${podcast.description}</div>
-                    </div>
-                    ${episodeListHTML}
-                </div>
-            `;
+    <div class="podcast-item" data-id="${podcast.id}">
+        <img src="${podcast.image}" alt="${podcast.title}" class="podcast-image">
+        <button class="favorite-btn" onclick="toggleFavorite(${podcast.id}, event)">${isFavorite ? "❤️" : "🤍"}</button>
+        <div class="podcast-content">
+            <div class="podcast-title">${podcast.title}</div>
+            <div class="podcast-author">${podcast.author}</div>
+            <div class="podcast-description">${podcast.description}</div>
+        </div>
+        ${episodeListHTML}
+    </div>
+    `;
             }
 
             function renderPodcasts() {
@@ -435,9 +455,6 @@
                             const episodeList = item.querySelector(".episode-list");
                             if (episodeList) {
                                 episodeList.style.display = episodeList.style.display === "none" ? "block" : "none";
-                            } else {
-                                const podcastId = parseInt(item.getAttribute("data-id"));
-                                playPodcast(podcastId);
                             }
                         }
                     });
@@ -449,7 +466,9 @@
                         const audioUrl = episode.getAttribute("data-audio");
                         const podcastItem = episode.closest(".podcast-item");
                         const podcastId = parseInt(podcastItem.getAttribute("data-id"));
-                        const podcast = subscriptions.find((p) => p.id === podcastId);
+                        const podcast =
+                            podcastData.find((p) => p.id === podcastId) ||
+                            subscriptions.find((p) => p.id === podcastId);
                         playEpisode(podcast, episode.querySelector(".episode-title").textContent, audioUrl);
                     });
                 });
@@ -465,18 +484,6 @@
                 }
                 localStorage.setItem("favorites", JSON.stringify(favorites));
                 renderPodcasts();
-            }
-
-            function playPodcast(id) {
-                currentPodcast =
-                    podcastData.find((podcast) => podcast.id === id) ||
-                    subscriptions.find((podcast) => podcast.id === id);
-                document.getElementById("playerImage").src = currentPodcast.image;
-                document.getElementById("playerTitle").textContent = currentPodcast.title;
-                document.getElementById("playerAuthor").textContent = currentPodcast.author;
-                document.getElementById("player").style.display = "flex";
-                audioPlayer.src = currentPodcast.audio;
-                togglePlayPause();
             }
 
             function playEpisode(podcast, episodeTitle, audioUrl) {
@@ -501,21 +508,7 @@
                 }
             }
 
-            function nextPodcast() {
-                const currentIndex = podcastData.findIndex((podcast) => podcast.id === currentPodcast.id);
-                const nextIndex = (currentIndex + 1) % podcastData.length;
-                playPodcast(podcastData[nextIndex].id);
-            }
-
-            function prevPodcast() {
-                const currentIndex = podcastData.findIndex((podcast) => podcast.id === currentPodcast.id);
-                const prevIndex = (currentIndex - 1 + podcastData.length) % podcastData.length;
-                playPodcast(podcastData[prevIndex].id);
-            }
-
             document.getElementById("playPauseButton").addEventListener("click", togglePlayPause);
-            document.getElementById("nextButton").addEventListener("click", nextPodcast);
-            document.getElementById("prevButton").addEventListener("click", prevPodcast);
 
             document.querySelectorAll(".tab").forEach((tab) => {
                 tab.addEventListener("click", () => {
@@ -558,10 +551,10 @@
                 }
             };
 
-            addRssBtn.onclick = function () {
+            addRssBtn.onclick = async function () {
                 const rssUrl = document.getElementById("rssInput").value;
                 if (rssUrl) {
-                    fetchRssFeed(rssUrl);
+                    await fetchRssFeed(rssUrl);
                 }
             };
 
@@ -574,11 +567,12 @@
 
                     if (data.status === "ok") {
                         const feedData = {
-                            id: Date.now(), // Generate a unique ID
+                            id: Date.now(),
                             title: data.feed.title,
                             author: data.feed.author,
                             description: data.feed.description,
                             image: data.feed.image,
+                            feedUrl: url,
                             episodes: data.items.map((item) => ({
                                 title: item.title,
                                 pubDate: item.pubDate,
@@ -599,7 +593,7 @@
                 }
             }
 
-            renderPodcasts();
+            initializePodcasts();
         </script>
     </body>
 </html>
