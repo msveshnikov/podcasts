@@ -261,6 +261,28 @@
                     justify-content: space-around;
                 }
             }
+            .episode-list {
+                display: none;
+                background-color: #0f3460;
+                padding: 10px;
+                border-radius: 0 0 12px 12px;
+            }
+            .episode-item {
+                padding: 10px;
+                border-bottom: 1px solid #16213e;
+                cursor: pointer;
+            }
+            .episode-item:last-child {
+                border-bottom: none;
+            }
+            .episode-title {
+                font-weight: bold;
+                color: #e94560;
+            }
+            .episode-date {
+                font-size: 0.8rem;
+                color: #a9a9a9;
+            }
         </style>
     </head>
     <body>
@@ -360,6 +382,23 @@
 
             function createPodcastItem(podcast) {
                 const isFavorite = favorites.includes(podcast.id);
+                let episodeListHTML = "";
+                if (podcast.episodes) {
+                    episodeListHTML = `
+                    <div class="episode-list">
+                        ${podcast.episodes
+                            .map(
+                                (episode) => `
+                            <div class="episode-item" data-audio="${episode.audio}">
+                                <div class="episode-title">${episode.title}</div>
+                                <div class="episode-date">${new Date(episode.pubDate).toLocaleDateString()}</div>
+                            </div>
+                        `
+                            )
+                            .join("")}
+                    </div>
+                `;
+                }
                 return `
                 <div class="podcast-item" data-id="${podcast.id}">
                     <img src="${podcast.image}" alt="${podcast.title}" class="podcast-image">
@@ -371,6 +410,7 @@
                         <div class="podcast-author">${podcast.author}</div>
                         <div class="podcast-description">${podcast.description}</div>
                     </div>
+                    ${episodeListHTML}
                 </div>
             `;
             }
@@ -391,10 +431,26 @@
 
                 podcastList.querySelectorAll(".podcast-item").forEach((item) => {
                     item.addEventListener("click", (e) => {
-                        if (!e.target.classList.contains("favorite-btn")) {
-                            const podcastId = parseInt(item.getAttribute("data-id"));
-                            playPodcast(podcastId);
+                        if (!e.target.classList.contains("favorite-btn") && !e.target.closest(".episode-item")) {
+                            const episodeList = item.querySelector(".episode-list");
+                            if (episodeList) {
+                                episodeList.style.display = episodeList.style.display === "none" ? "block" : "none";
+                            } else {
+                                const podcastId = parseInt(item.getAttribute("data-id"));
+                                playPodcast(podcastId);
+                            }
                         }
+                    });
+                });
+
+                podcastList.querySelectorAll(".episode-item").forEach((episode) => {
+                    episode.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        const audioUrl = episode.getAttribute("data-audio");
+                        const podcastItem = episode.closest(".podcast-item");
+                        const podcastId = parseInt(podcastItem.getAttribute("data-id"));
+                        const podcast = subscriptions.find((p) => p.id === podcastId);
+                        playEpisode(podcast, episode.querySelector(".episode-title").textContent, audioUrl);
                     });
                 });
             }
@@ -420,6 +476,16 @@
                 document.getElementById("playerAuthor").textContent = currentPodcast.author;
                 document.getElementById("player").style.display = "flex";
                 audioPlayer.src = currentPodcast.audio;
+                togglePlayPause();
+            }
+
+            function playEpisode(podcast, episodeTitle, audioUrl) {
+                currentPodcast = podcast;
+                document.getElementById("playerImage").src = podcast.image;
+                document.getElementById("playerTitle").textContent = episodeTitle;
+                document.getElementById("playerAuthor").textContent = podcast.author;
+                document.getElementById("player").style.display = "flex";
+                audioPlayer.src = audioUrl;
                 togglePlayPause();
             }
 
@@ -513,7 +579,11 @@
                             author: data.feed.author,
                             description: data.feed.description,
                             image: data.feed.image,
-                            audio: data.items[0]?.enclosure?.link || "",
+                            episodes: data.items.map((item) => ({
+                                title: item.title,
+                                pubDate: item.pubDate,
+                                audio: item.enclosure?.link || "",
+                            })),
                         };
 
                         subscriptions.push(feedData);
