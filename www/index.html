@@ -390,7 +390,6 @@
                     feedUrl: "https://feeds.simplecast.com/Y8lFbOT4",
                     episodes: [],
                 },
-
                 {
                     id: 14,
                     title: "Rumble Strip",
@@ -399,8 +398,36 @@
                     feedUrl: "https://www.rumblestripvermont.com/feed",
                     episodes: [],
                 },
-            ];
+                {
+                    id: 15,
+                    title: "TED Talks Daily",
+                    author: "TED",
+                    description:
+                        "Every weekday, TED Talks Daily brings you the latest talks in audio. Join host and journalist Elise Hu for thought-provoking ideas on every subject imaginable — from Artificial Intelligence to Zoology, and everything in between.",
+                    feedUrl: "https://feeds.feedburner.com/TEDTalks_video",
+                    episodes: [],
+                },
 
+                {
+                    id: 21,
+                    title: "The Bill Simmons Podcast",
+                    author: "The Ringer",
+                    description:
+                        "The Bill Simmons Podcast features the most interesting people in the world of sports and entertainment, hosted by the one and only Bill Simmons.",
+                    feedUrl: "https://feeds.megaphone.fm/the-bill-simmons-podcast",
+                    episodes: [],
+                },
+
+                {
+                    id: 28,
+                    title: "How I Built This with Guy Raz",
+                    author: "NPR",
+                    description:
+                        "Guy Raz dives into the stories behind some of the world's best known companies. How I Built This weaves a narrative journey about innovators, entrepreneurs and idealists—and the movements they built.",
+                    feedUrl: "https://feeds.npr.org/510313/podcast.xml",
+                    episodes: [],
+                },
+            ];
             let currentPodcast = null;
             let isPlaying = false;
             let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
@@ -441,35 +468,35 @@
                 let episodeListHTML = "";
                 if (podcast.episodes && podcast.episodes.length > 0) {
                     episodeListHTML = `
-                <div class="episode-list">
-                    ${podcast.episodes
-                        .slice(0, 5)
-                        .map(
-                            (episode) => `
-                        <div class="episode-item" data-audio="${episode.audio}">
-                            <div class="episode-title">${episode.title}</div>
-                            <div class="episode-date">${new Date(episode.pubDate).toLocaleDateString()}</div>
-                        </div>
-                    `
-                        )
-                        .join("")}
-                </div>
-            `;
+                          <div class="episode-list">
+                              ${podcast.episodes
+                                  .slice(0, 5)
+                                  .map(
+                                      (episode) => `
+                                  <div class="episode-item" data-audio="${episode.audio}">
+                                      <div class="episode-title">${episode.title}</div>
+                                      <div class="episode-date">${new Date(episode.pubDate).toLocaleDateString()}</div>
+                                  </div>
+                              `
+                                  )
+                                  .join("")}
+                          </div>
+                      `;
                 }
                 return `
-            <div class="podcast-item" data-id="${podcast.id}">
-                <img src="${podcast.image}" alt="${podcast.title}" class="podcast-image">
-                <button class="favorite-btn" onclick="toggleFavorite(${podcast.id}, event)">${
+                      <div class="podcast-item" data-id="${podcast.id}">
+                          <img src="${podcast.image}" alt="${podcast.title}" class="podcast-image">
+                          <button class="favorite-btn" onclick="toggleFavorite(${podcast.id}, event)">${
                     isFavorite ? "❤️" : "🤍"
                 }</button>
-                <div class="podcast-content">
-                    <div class="podcast-title">${podcast.title}</div>
-                    <div class="podcast-author">${podcast.author}</div>
-                    <div class="podcast-description">${podcast.description}</div>
-                </div>
-                ${episodeListHTML}
-            </div>
-            `;
+                          <div class="podcast-content">
+                              <div class="podcast-title">${podcast.title}</div>
+                              <div class="podcast-author">${podcast.author}</div>
+                              <div class="podcast-description">${podcast.description}</div>
+                          </div>
+                          ${episodeListHTML}
+                      </div>
+                      `;
             }
 
             function renderPodcasts() {
